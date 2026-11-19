@@ -8,6 +8,7 @@ import { GraficaLineas } from '../../components/GraficaLineas';
 import { brecha } from '../../components/Resultado';
 import { Aviso, Chip, Estadisticas, Ids, Stat, TablaScroll, Tarjeta } from '../../components/ui';
 import { M } from '../../components/Tex';
+import { Barra, fraccionLog, MarcaMatriz } from '../../components/TablaGrafica';
 
 const INFO: Record<
   Algoritmo,
@@ -97,7 +98,14 @@ export default function Comparacion() {
       <Tarjeta titulo={`Resultados: ${nombre}`}>
         {comp.cargando && <p className="cargando">Ejecutando en el Web Worker (mediana de 5 repeticiones)…</p>}
         {comp.error && <Aviso tipo="peligro">{comp.error}</Aviso>}
-        {filas && <TablaComparativa filas={filas} referencia={referencia} />}
+        {filas && (
+          <>
+            <h3 className="mt0">Tabla gráfica comparativa</h3>
+            <ComparacionVisual filas={filas} referencia={referencia} />
+            <h3>Detalle</h3>
+            <TablaComparativa filas={filas} referencia={referencia} />
+          </>
+        )}
         <p className="peq muted">
           Tiempo: mediana de 5 repeticiones con <code>performance.now()</code> en este navegador (1 repetición para el
           exhaustivo con n ≥ 18). Como el navegador redondea el reloj, cada repetición ejecuta el algoritmo k veces
@@ -108,6 +116,89 @@ export default function Comparacion() {
 
       <Graficas />
       <Pares />
+    </>
+  );
+}
+
+function ComparacionVisual({ filas, referencia }: { filas: FilaComparacion[]; referencia: { valor: bigint; fuente: string } | null }) {
+  const ejecutadas = filas.filter((f) => f.ejecutado);
+  const maxValor = ejecutadas.reduce((m, f) => (f.valor! > m ? f.valor! : m), 0n);
+  const maxOps = Math.max(0, ...ejecutadas.map((f) => f.operaciones ?? 0));
+  const maxT = Math.max(0, ...ejecutadas.map((f) => f.tiempoMs ?? 0));
+  const tMin = Math.min(...ejecutadas.map((f) => f.tiempoMs ?? Infinity).filter((t) => t > 0));
+  return (
+    <>
+      <TablaScroll>
+        <table className="tarjetas-movil tabla-grafica">
+          <thead>
+            <tr>
+              <th>Algoritmo</th>
+              <th className="matriz-celda">¿Óptimo garantizado?</th>
+              <th>Beneficio obtenido (vs. OPT)</th>
+              <th>Operaciones (escala log)</th>
+              <th>Tiempo (escala log)</th>
+              <th>Crecimiento</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ORDEN.map((a) => {
+              const f = filas.find((x) => x.alg === a)!;
+              const i = INFO[a];
+              const ref = referencia?.valor ?? maxValor;
+              return (
+                <tr key={a}>
+                  <td className="titulo-celda" data-label="Algoritmo">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                      <span className="muestra" style={{ background: i.color }} />
+                      {i.nombre}
+                    </span>
+                  </td>
+                  <td className="matriz-celda" data-label="¿Óptimo?">
+                    <MarcaMatriz tipo={i.garantiza ? 'si' : 'no'} texto={i.garantiza ? '✓ Exacto' : '✗ Heurística'} />
+                  </td>
+                  <td className="barra-celda" data-label="Beneficio">
+                    {f.ejecutado ? (
+                      <Barra
+                        fraccion={ref > 0n ? Number((f.valor! * 10000n) / ref) / 10000 : 0}
+                        color={i.color}
+                        texto={ref > 0n ? `${(Number((f.valor! * 10000n) / ref) / 100).toFixed(2).replace('.', ',')} %` : fmt(f.valor!)}
+                      />
+                    ) : (
+                      <span className="peq muted">no se ejecuta</span>
+                    )}
+                  </td>
+                  <td className="barra-celda" data-label="Operaciones">
+                    {f.operaciones !== undefined ? (
+                      <Barra fraccion={fraccionLog(f.operaciones, maxOps)} color={i.color} texto={fmtN(f.operaciones)} />
+                    ) : (
+                      <span className="peq muted">—</span>
+                    )}
+                  </td>
+                  <td className="barra-celda" data-label="Tiempo">
+                    {f.tiempoMs !== undefined ? (
+                      <Barra
+                        fraccion={fraccionLog(f.tiempoMs / tMin, maxT / tMin)}
+                        color={i.color}
+                        texto={fmtTiempo(f.tiempoMs)}
+                      />
+                    ) : (
+                      <span className="peq muted">—</span>
+                    )}
+                  </td>
+                  <td data-label="Crecimiento" className="peq">
+                    {i.tiempo}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </TablaScroll>
+      <p className="peq muted">
+        Barra de beneficio: porcentaje del óptimo (100 % = OPT). Operaciones y tiempo en escala logarítmica respecto al
+        mayor de la columna; las operaciones tienen unidades distintas (llamadas, celdas, nodos), así que comparan órdenes
+        de magnitud, no la misma cantidad.
+      </p>
     </>
   );
 }

@@ -972,3 +972,63 @@ input[type='checkbox'] {
     color: var(--accent);
   }
 }
+
+/* ---------- Tablas gráficas comparativas ---------- */
+table.tabla-grafica td.barra-celda {
+  min-width: 170px;
+}
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.barra-pista {
+  flex: 1;
+  height: 12px;
+  min-width: 80px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.barra-relleno {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+.barra-texto {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85em;
+  white-space: nowrap;
+  min-width: 72px;
+  text-align: right;
+}
+.matriz-celda {
+  text-align: center;
+}
+.marca-matriz {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.marca-matriz.si { background: var(--ok-soft); color: var(--ok); }
+.marca-matriz.no { background: var(--bad-soft); color: var(--bad); }
+.marca-matriz.abierto { background: var(--warn-soft); color: var(--warn); }
+.marca-matriz.depende { background: var(--surface-2); color: var(--text-2); }
+.leyenda-matriz {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 10px;
+}
+@media (max-width: 640px) {
+  table.tabla-grafica td.barra-celda,
+  table.tabla-grafica td.matriz-celda {
+    text-align: left;
+  }
+}

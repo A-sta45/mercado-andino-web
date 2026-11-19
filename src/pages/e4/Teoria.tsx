@@ -1,5 +1,6 @@
 import { href } from '../../rutas';
-import { Aviso, Tarjeta } from '../../components/ui';
+import { Aviso, TablaScroll, Tarjeta } from '../../components/ui';
+import { LeyendaMatriz, MarcaMatriz, type Marca } from '../../components/TablaGrafica';
 import { M, MB } from '../../components/Tex';
 
 export default function Teoria() {
@@ -80,6 +81,8 @@ export default function Teoria() {
         </Aviso>
       </Tarjeta>
 
+      <TablaClases />
+
       <Tarjeta titulo="Reducciones polinómicas">
         <p>
           <M>{String.raw`A\le_p X`}</M> significa que existe una función <M>f</M>, computable en tiempo polinómico, tal
@@ -139,5 +142,114 @@ function DiagramaClases() {
         es de decisión.
       </figcaption>
     </figure>
+  );
+}
+
+type Celda = { tipo: Marca; texto?: string };
+
+const COLUMNAS = [
+  'Es de decisión (sí/no)',
+  'Certificado verificable en tiempo polinómico',
+  'Algoritmo polinómico conocido',
+  'Todo NP se reduce a él',
+];
+
+const FILAS: { nombre: string; color: string; celdas: Celda[]; ejemplo: string; proyecto?: boolean }[] = [
+  {
+    nombre: 'P',
+    color: 'var(--series-3)',
+    celdas: [{ tipo: 'si' }, { tipo: 'si' }, { tipo: 'si' }, { tipo: 'abierto', texto: '? Solo si P = NP' }],
+    ejemplo: '¿Es factible una selección dada? (verificador de la Entrega 1)',
+  },
+  {
+    nombre: 'NP',
+    color: 'var(--series-1)',
+    celdas: [{ tipo: 'si' }, { tipo: 'si' }, { tipo: 'depende' }, { tipo: 'depende' }],
+    ejemplo: 'Todo P, más SUBSET SUM, 3-SAT, CLIQUE…',
+  },
+  {
+    nombre: 'NP-difícil',
+    color: 'var(--series-2)',
+    celdas: [{ tipo: 'depende' }, { tipo: 'depende' }, { tipo: 'no', texto: '✗ No se conoce' }, { tipo: 'si' }],
+    ejemplo: 'Optimización Mercado Andino, TSP de optimización',
+  },
+  {
+    nombre: 'NP-completo',
+    color: 'var(--series-4)',
+    celdas: [{ tipo: 'si' }, { tipo: 'si' }, { tipo: 'no', texto: '✗ No se conoce' }, { tipo: 'si' }],
+    ejemplo: 'SUBSET SUM, 3-SAT, CLIQUE, VERTEX COVER',
+  },
+  {
+    nombre: 'DECISIÓN Mercado Andino',
+    color: 'var(--accent)',
+    proyecto: true,
+    celdas: [{ tipo: 'si' }, { tipo: 'si', texto: '✓ Sí, O(n)' }, { tipo: 'no', texto: '✗ Solo pseudopolinómico' }, { tipo: 'si', texto: '✓ Sí (SUBSET SUM ≤p)' }],
+    ejemplo: 'NP-completo (Entrega 4)',
+  },
+  {
+    nombre: 'Optimización Mercado Andino',
+    color: 'var(--accent)',
+    proyecto: true,
+    celdas: [{ tipo: 'no' }, { tipo: 'no', texto: '✗ No aplica' }, { tipo: 'no', texto: '✗ No se conoce' }, { tipo: 'si' }],
+    ejemplo: 'NP-difícil, fuera de NP (Entrega 3)',
+  },
+];
+
+function TablaClases() {
+  return (
+    <Tarjeta titulo="Tabla gráfica comparativa de las clases">
+      <p className="peq">
+        Cada fila es una clase (o uno de los dos problemas del proyecto) y cada columna una propiedad. «No siempre»
+        significa que la clase contiene problemas con y sin esa propiedad.
+      </p>
+      <TablaScroll>
+        <table className="tarjetas-movil tabla-grafica" style={{ minWidth: 900 }}>
+          <thead>
+            <tr>
+              <th>Clase / problema</th>
+              {COLUMNAS.map((c) => (
+                <th key={c} className="matriz-celda">
+                  {c}
+                </th>
+              ))}
+              <th>Ejemplos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {FILAS.map((f) => (
+              <tr key={f.nombre} style={f.proyecto ? { background: 'var(--accent-soft)' } : undefined}>
+                <td className="titulo-celda" data-label="Clase">
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                    <span className="muestra" style={{ background: f.color }} />
+                    {f.nombre}
+                  </span>
+                </td>
+                {f.celdas.map((c, i) => (
+                  <td key={i} className="matriz-celda" data-label={COLUMNAS[i]}>
+                    <MarcaMatriz tipo={c.tipo} texto={c.texto} />
+                  </td>
+                ))}
+                <td className="peq" data-label="Ejemplos">
+                  {f.ejemplo}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TablaScroll>
+      <LeyendaMatriz
+        tipos={[
+          { tipo: 'si', significado: 'se cumple' },
+          { tipo: 'no', significado: 'no se cumple o no se conoce' },
+          { tipo: 'depende', significado: 'depende del problema' },
+          { tipo: 'abierto', significado: 'depende de P vs NP (abierto)' },
+        ]}
+      />
+      <p className="peq muted">
+        «No se conoce» no es lo mismo que «no existe»: que un problema NP-completo no tenga algoritmo polinómico es
+        exactamente la conjetura P ≠ NP. La DP de la Entrega 3 resuelve DECISIÓN en Θ(nW), que es polinómico en el
+        valor de W pero exponencial en sus bits.
+      </p>
+    </Tarjeta>
   );
 }
